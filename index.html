@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>旅伴账本 · 原型（手机版）</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#fff; --ink:#1c1d22; --sub:#8a8f99; --line:#eceef1;
+    --brand:#2f6bff; --brand-soft:#eaf0ff; --pos:#12a150; --neg:#e8484b;
+    --radius:16px; --shadow:0 2px 12px rgba(20,25,40,.06);
+    --tabh:64px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  .app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--bg)}
+  .page{display:none;flex:1;padding:14px 16px calc(var(--tabh) + 20px);overflow-y:auto}
+  .page.on{display:block}
+  .nav{display:flex;align-items:center;gap:10px;padding:6px 0 14px}
+  .nav .title{font-size:19px;font-weight:800}
+  .nav .tag{margin-left:auto;font-size:11px;color:var(--sub)}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+  .muted{color:var(--sub);font-size:12px}
+  .row{display:flex;align-items:center;justify-content:space-between}
+  .btn{display:block;width:100%;text-align:center;background:var(--brand);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:600;box-shadow:0 6px 16px rgba(47,107,255,.28);margin-top:6px}
+  .btn.sec{background:#fff;color:var(--brand);box-shadow:var(--shadow)}
+  .btn.ghost{background:transparent;color:var(--sub);box-shadow:none;font-weight:500}
+  .avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600}
+  .a1{background:#ff7a59}.a2{background:#2f6bff}.a3{background:#12a150}.a4{background:#9b5de5}.a5{background:#ff9f1c}
+  .chip{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--brand-soft);color:var(--brand)}
+  .chip.g{background:#e5f7ec;color:var(--pos)}
+  .amt.pos{color:var(--pos)}.amt.neg{color:var(--neg)}
+  .field{background:#f6f7f9;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .field label{display:block;font-size:11px;color:var(--sub);margin-bottom:3px}
+  .field .val{font-size:16px;font-weight:600}
+  .segbtns{display:flex;gap:8px}
+  .segbtns .seg{flex:1;text-align:center;padding:10px;border-radius:10px;background:#f0f2f5;font-size:13px;font-weight:600;color:#5a6270}
+  .segbtns .seg.on{background:var(--brand);color:#fff}
+  .listitem{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .listitem:last-child{border-bottom:none}
+  .listitem .ic{width:40px;height:40px;border-radius:11px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .settle{display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:#f6f7f9;margin-bottom:10px}
+  .arrow{color:var(--sub);font-size:16px}
+  /* bottom tabs */
+  .tabs{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;height:var(--tabh);
+    background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    display:flex;padding-bottom:env(safe-area-inset-bottom)}
+  .tabs button{flex:1;border:none;background:none;font-size:10px;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:9px;font-weight:600}
+  .tabs button .em{font-size:19px;filter:grayscale(1);opacity:.5}
+  .tabs button.on{color:var(--brand)}
+  .tabs button.on .em{filter:none;opacity:1}
+  .hint{position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;background:#101216;color:#fff;font-size:11px;text-align:center;padding:5px;z-index:20;opacity:.92}
+</style>
+</head>
+<body>
+<div class="hint" id="hint">👇 底部切换 5 个页面 · 这是原型，点哪都行</div>
+<div class="app">
+
+  <!-- 1 加入账本 -->
+  <div class="page on" id="p1">
+    <div style="text-align:center;padding:30px 0 6px">
+      <div class="avatar a1" style="width:60px;height:60px;font-size:24px;margin:0 auto">阿</div>
+      <div style="margin-top:10px;font-size:13px;color:var(--sub)">阿May 邀请你加入</div>
+      <div style="font-size:24px;font-weight:800;margin-top:4px">清迈跨年 6 日 🇹🇭</div>
+      <div style="margin-top:8px"><span class="chip">本位币 CNY</span> <span class="chip">THB · USD</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><span class="muted">已加入成员</span><span class="muted">4 / 8</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <span class="avatar a1">May</span><span class="avatar a2">阿哲</span>
+        <span class="avatar a3">小林</span><span class="avatar a4">Tina</span>
+      </div>
+    </div>
+    <div class="field"><label>设置你的昵称</label><div class="val">小羊 ▍</div></div>
+    <div class="muted" style="text-align:center;margin:10px 0">无需下载 App · 微信/浏览器直接使用</div>
+    <button class="btn" onclick="go(2)">加入账本</button>
+    <button class="btn ghost" onclick="go(2)">先看看再说</button>
+  </div>
+
+  <!-- 2 账本概览 -->
+  <div class="page" id="p2">
+    <div class="nav"><div class="title">清迈跨年 6 日</div><div class="tag">概览</div></div>
+    <div class="card" style="background:linear-gradient(135deg,#2f6bff,#5a8bff);color:#fff;box-shadow:0 8px 20px rgba(47,107,255,.3)">
+      <div style="font-size:12px;opacity:.85">总支出（折合 CNY）</div>
+      <div style="font-size:32px;font-weight:800;margin:2px 0">¥ 8,420.50</div>
+      <div class="row" style="margin-top:8px;font-size:13px;opacity:.95">
+        <span>👥 5 人 · 23 笔</span><span>你的净额 <b style="font-size:15px">+¥212</b></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:6px"><b>成员余额</b><span class="muted">谁垫多了 / 谁该补</span></div>
+      <div class="listitem"><span class="avatar a1">May</span><div style="flex:1"><b>阿May</b><div class="muted">垫付 ¥3,120</div></div><b class="amt pos">+¥680</b></div>
+      <div class="listitem"><span class="avatar a3">林</span><div style="flex:1"><b>小林</b><div class="muted">垫付 ¥1,900</div></div><b class="amt pos">+¥212</b></div>
+      <div class="listitem"><span class="avatar a2">哲</span><div style="flex:1"><b>阿哲</b><div class="muted">垫付 ¥400</div></div><b class="amt neg">−¥540</b></div>
+      <div class="listitem"><span class="avatar a4">T</span><div style="flex:1"><b>Tina</b><div class="muted">垫付 ¥0</div></div><b class="amt neg">−¥352</b></div>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div class="row"><b>最近明细</b><span class="chip">全部 ›</span></div>
+      <div class="listitem" onclick="go(4)"><span class="ic">🍜</span><div style="flex:1"><b>晚餐 · 夜市</b><div class="muted">阿May 垫付 · 5 人均摊</div></div><div style="text-align:right"><b>฿1,200</b><div class="muted">≈¥248</div></div></div>
+      <div class="listitem"><span class="ic">🚕</span><div style="flex:1"><b>包车一日游</b><div class="muted">小林 垫付 · 5 人均摊</div></div><div style="text-align:right"><b>฿2,500</b><div class="muted">≈¥517</div></div></div>
+    </div>
+    <button class="btn" onclick="go(3)">＋ 记一笔</button>
+  </div>
+
+  <!-- 3 记一笔 -->
+  <div class="page" id="p3">
+    <div class="nav"><div class="title">记一笔</div><div class="tag">核心 · 20 秒</div></div>
+    <div style="text-align:center;padding:10px 0 4px">
+      <div class="muted">金额</div>
+      <div style="font-size:40px;font-weight:800">฿ 1,200<span style="color:var(--brand)">▍</span></div>
+      <div class="muted">≈ ¥248.16 · 汇率 0.2068 <span class="chip" style="padding:2px 8px">改</span></div>
+    </div>
+    <div class="segbtns" style="margin-bottom:12px">
+      <div class="seg on">THB ฿</div><div class="seg">CNY ¥</div><div class="seg">USD $</div><div class="seg">…</div>
+    </div>
+    <div class="field"><label>付款人（谁先垫的）</label><div class="row"><span class="val">🧡 阿May</span><span class="muted">切换 ›</span></div></div>
+    <div class="field"><label>分摊方式</label>
+      <div class="segbtns" style="margin-top:4px"><div class="seg on">平均分</div><div class="seg">固定额</div><div class="seg">按比例</div></div>
+    </div>
+    <div class="field"><label>参与分摊（5 人 · 点头像可排除）</label>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <span class="avatar a1">May</span><span class="avatar a2">哲</span><span class="avatar a3">林</span>
+        <span class="avatar a4">T</span><span class="avatar a5">羊</span>
+      </div>
+    </div>
+    <div class="row" style="gap:10px">
+      <div class="field" style="flex:1;margin:0"><label>分类</label><div class="val">🍜 餐饮</div></div>
+      <div class="field" style="flex:1;margin:0"><label>日期</label><div class="val">今天</div></div>
+    </div>
+    <button class="btn" onclick="go(2)">保存（每人 ¥49.6）</button>
+  </div>
+
+  <!-- 4 账目明细 -->
+  <div class="page" id="p4">
+    <div class="nav"><div class="title">账目详情</div><div class="tag">可追溯</div></div>
+    <div class="card" style="text-align:center">
+      <div class="ic" style="width:54px;height:54px;font-size:27px;margin:0 auto 8px">🍜</div>
+      <div style="font-size:15px;font-weight:600">晚餐 · 清迈周日夜市</div>
+      <div style="font-size:32px;font-weight:800;margin-top:4px">฿ 1,200.00</div>
+      <div class="muted">≈ ¥248.16 · 汇率 0.2068（记录于 12/31 20:14）</div>
+    </div>
+    <div class="card">
+      <div class="listitem"><span class="muted" style="flex:1">付款人</span><b>🧡 阿May 垫付</b></div>
+      <div class="listitem"><span class="muted" style="flex:1">分摊方式</span><b>平均分 · 5 人</b></div>
+      <div class="listitem"><span class="muted" style="flex:1">分类 / 日期</span><b>餐饮 · 12/31</b></div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px">每人承担</b>
+      <div class="listitem"><span class="avatar a1">May</span><span style="flex:1">阿May</span><b>¥49.63</b></div>
+      <div class="listitem"><span class="avatar a2">哲</span><span style="flex:1">阿哲</span><b>¥49.63</b></div>
+      <div class="listitem"><span class="avatar a3">林</span><span style="flex:1">小林</span><b>¥49.63</b></div>
+      <div class="listitem"><span class="avatar a4">T</span><span style="flex:1">Tina</span><b>¥49.63</b></div>
+      <div class="listitem"><span class="avatar a5">羊</span><span style="flex:1">小羊</span><b>¥49.64 <span class="muted">(尾差)</span></b></div>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div class="muted">🕓 操作记录</div>
+      <div style="font-size:12px;color:#5a6270;margin-top:6px;line-height:1.7">
+        阿May 创建 · 12/31 20:14<br>小林 修改金额 ฿1150→฿1200 · 20:16
+      </div>
+    </div>
+    <div class="row" style="gap:10px">
+      <button class="btn sec" style="flex:1">编辑</button>
+      <button class="btn ghost" style="flex:1;color:var(--neg)">删除</button>
+    </div>
+  </div>
+
+  <!-- 5 最终结算 -->
+  <div class="page" id="p5">
+    <div class="nav"><div class="title">一键结算</div><div class="tag">北极星</div></div>
+    <div class="card" style="text-align:center;background:#e5f7ec">
+      <div style="font-size:13px;color:var(--pos);font-weight:600">✓ 已算清全部 23 笔</div>
+      <div style="font-size:15px;margin-top:4px">只需 <b style="font-size:24px">3 笔转账</b> 即可两清</div>
+      <div class="muted">（而不是 5 人互相转 10 次）</div>
+    </div>
+    <div class="card">
+      <b style="font-size:13px">建议转账方案</b>
+      <div class="settle"><span class="avatar a2">哲</span><span>阿哲</span><span class="arrow">→</span><span class="avatar a1">May</span><span style="flex:1">阿May</span><b class="amt neg">¥540</b></div>
+      <div class="settle"><span class="avatar a4">T</span><span>Tina</span><span class="arrow">→</span><span class="avatar a1">May</span><span style="flex:1">阿May</span><b class="amt neg">¥140</b></div>
+      <div class="settle"><span class="avatar a4">T</span><span>Tina</span><span class="arrow">→</span><span class="avatar a3">林</span><span style="flex:1">小林</span><b class="amt neg">¥212</b></div>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div class="listitem"><span style="flex:1">阿哲 → 阿May ¥540</span><span class="chip">待付款</span></div>
+      <div class="listitem"><span style="flex:1">Tina → 阿May ¥140</span><span class="chip g">✓ 已确认</span></div>
+    </div>
+    <button class="btn">标记我已付款</button>
+    <button class="btn ghost">导出账单（P1）</button>
+  </div>
+
+</div>
+
+<div class="tabs">
+  <button class="on" id="t1" onclick="go(1)"><span class="em">🔑</span>加入</button>
+  <button id="t2" onclick="go(2)"><span class="em">🏠</span>概览</button>
+  <button id="t3" onclick="go(3)"><span class="em">➕</span>记一笔</button>
+  <button id="t4" onclick="go(4)"><span class="em">📄</span>明细</button>
+  <button id="t5" onclick="go(5)"><span class="em">✅</span>结算</button>
+</div>
+
+<script>
+  function go(n){
+    for(var i=1;i<=5;i++){
+      document.getElementById('p'+i).classList.toggle('on', i===n);
+      document.getElementById('t'+i).classList.toggle('on', i===n);
+    }
+    window.scrollTo(0,0);
+    document.querySelector('.app').scrollTop=0;
+  }
+  setTimeout(function(){var h=document.getElementById('hint'); if(h) h.style.display='none';}, 4000);
+</script>
+</body>
+</html>
