@@ -47,6 +47,19 @@
   .key:active{background:var(--brand-soft)}
   .mem{cursor:pointer;transition:opacity .15s}
   .mem.off{opacity:.28;filter:grayscale(1)}
+  /* 底部弹层 */
+  .sheet-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40;display:none}
+  .sheet-mask.on{display:block}
+  .sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#fff;
+    border-radius:20px 20px 0 0;z-index:41;transform:translateY(100%);transition:transform .22s;padding:8px 16px calc(20px + env(safe-area-inset-bottom))}
+  .sheet.on{transform:translateY(0)}
+  .sheet h4{text-align:center;font-size:14px;color:var(--sub);font-weight:600;margin:12px 0 6px}
+  .opt{display:flex;align-items:center;gap:12px;padding:15px 6px;border-bottom:1px solid var(--line);font-size:16px;font-weight:600;cursor:pointer}
+  .opt:last-child{border-bottom:none}
+  .opt .check{margin-left:auto;color:var(--brand);font-weight:800}
+  .toast{position:fixed;left:50%;top:38%;transform:translateX(-50%);background:rgba(16,18,22,.92);color:#fff;
+    padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:80%;text-align:center}
+  .toast.on{display:block}
   /* bottom tabs */
   .tabs{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;height:var(--tabh);
     background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);
@@ -100,6 +113,10 @@
       <div class="listitem"><span class="avatar a2">哲</span><div style="flex:1"><b>阿哲</b><div class="muted">垫付 ¥400</div></div><b class="amt neg">−¥540</b></div>
       <div class="listitem"><span class="avatar a4">T</span><div style="flex:1"><b>Tina</b><div class="muted">垫付 ¥0</div></div><b class="amt neg">−¥352</b></div>
     </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px"><b>按分类看支出</b><span class="muted">折合 CNY</span></div>
+      <div id="catSummary"></div>
+    </div>
     <div class="card" style="padding:12px 16px">
       <div class="row"><b>最近明细</b><span class="chip">全部 ›</span></div>
       <div id="newEntrySlot"></div>
@@ -120,7 +137,7 @@
     <div class="segbtns" id="curSeg" style="margin-bottom:12px">
       <div class="seg on" data-cur="THB">THB ฿</div><div class="seg" data-cur="CNY">CNY ¥</div><div class="seg" data-cur="USD">USD $</div>
     </div>
-    <div class="field" onclick="cyclePayer()"><label>付款人（谁先垫的 · 点击切换）</label><div class="row"><span class="val" id="payerDisp">🧡 阿May</span><span class="muted">切换 ›</span></div></div>
+    <div class="field" onclick="openPayer()"><label>付款人（谁先垫的 · 点击选择）</label><div class="row"><span class="val" id="payerDisp">🧡 阿May</span><span class="muted">选择 ›</span></div></div>
     <div class="field"><label>分摊方式</label>
       <div class="segbtns" id="splitSeg" style="margin-top:4px"><div class="seg on" data-split="平均分">平均分</div><div class="seg" data-split="固定额">固定额</div><div class="seg" data-split="按比例">按比例</div></div>
     </div>
@@ -131,9 +148,10 @@
       </div>
     </div>
     <div class="row" style="gap:10px">
-      <div class="field" style="flex:1;margin:0"><label>分类</label><div class="val">🍜 餐饮</div></div>
-      <div class="field" style="flex:1;margin:0"><label>日期</label><div class="val">今天</div></div>
+      <div class="field" style="flex:1;margin:0" onclick="openCat()"><label>分类（点击选择）</label><div class="val" id="catDisp">🍜 餐饮</div></div>
+      <div class="field" style="flex:1;margin:0" onclick="openDate()"><label>日期（点击选择）</label><div class="val" id="dateDisp">今天</div></div>
     </div>
+    <input type="date" id="dateNative" style="position:absolute;left:-9999px" onchange="onDatePicked(this.value)">
     <!-- 数字键盘 -->
     <div id="pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 6px">
       <div class="key">1</div><div class="key">2</div><div class="key">3</div>
@@ -203,6 +221,14 @@
 
 </div>
 
+<!-- 底部弹层（付款人/分类共用） -->
+<div class="sheet-mask" id="sheetMask" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <h4 id="sheetTitle">选择</h4>
+  <div id="sheetBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
 <div class="tabs">
   <button class="on" id="t1" onclick="go(1)"><span class="em">🔑</span>加入</button>
   <button id="t2" onclick="go(2)"><span class="em">🏠</span>概览</button>
@@ -228,12 +254,71 @@
   var MEMBERS = ['阿May','阿哲','小林','Tina','小羊'];
   var MEM_EMOJI = ['🧡','💙','💚','💜','🧡'];
   var ME_INDEX = 4;                            // “你”=小羊
-  var s = {amt:'', cur:'THB', payer:0, split:'平均分', join:[true,true,true,true,true]};
+  var CATS = [
+    {n:'餐饮', e:'🍜'},{n:'交通', e:'🚕'},{n:'住宿', e:'🏨'},
+    {n:'门票', e:'🎫'},{n:'购物', e:'🛍️'},{n:'其他', e:'📦'}
+  ];
+  var s = {amt:'', cur:'THB', payer:0, split:'平均分', join:[true,true,true,true,true], cat:0, date:'今天'};
 
-  var BASE_TOTAL = 8420.50, BASE_COUNT = 23, BASE_NET = 212;  // 概览初始值
+  var BASE_TOTAL = 8420.50, BASE_COUNT = 23, BASE_NET = 212;   // 概览初始值
+  // 分类汇总初始（折合 CNY，假数据）
+  var CAT_SUM = {'餐饮':3120,'交通':2480,'住宿':1650,'门票':720,'购物':450,'其他':0};
 
   function amtNum(){ return parseFloat(s.amt || '0') || 0; }
   function cnyOf(){ return amtNum() * RATE[s.cur]; }
+
+  /* --- toast --- */
+  var toastTimer;
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 1600);
+  }
+
+  /* --- 底部弹层 --- */
+  function openSheet(title, html){
+    document.getElementById('sheetTitle').textContent = title;
+    document.getElementById('sheetBody').innerHTML = html;
+    document.getElementById('sheetMask').classList.add('on');
+    document.getElementById('sheet').classList.add('on');
+  }
+  function closeSheet(){
+    document.getElementById('sheetMask').classList.remove('on');
+    document.getElementById('sheet').classList.remove('on');
+  }
+
+  // 选付款人（直接列出，人多也一步到位）
+  function openPayer(){
+    var html = MEMBERS.map(function(m,i){
+      return '<div class="opt" onclick="pickPayer('+i+')">'+MEM_EMOJI[i]+' '+m+
+             (i===s.payer?'<span class="check">✓</span>':'')+'</div>';
+    }).join('');
+    openSheet('选择付款人', html);
+  }
+  function pickPayer(i){ s.payer = i; closeSheet(); renderEntry(); }
+
+  // 选分类
+  function openCat(){
+    var html = CATS.map(function(c,i){
+      return '<div class="opt" onclick="pickCat('+i+')">'+c.e+' '+c.n+
+             (i===s.cat?'<span class="check">✓</span>':'')+'</div>';
+    }).join('');
+    html += '<div class="opt" style="color:var(--sub)" onclick="toast(\'自定义分类为完整版功能，敬请期待\')">＋ 自定义分类 <span class="muted" style="margin-left:auto">P1</span></div>';
+    openSheet('选择分类', html);
+  }
+  function pickCat(i){ s.cat = i; closeSheet(); renderEntry(); }
+
+  // 选日期
+  function openDate(){
+    var html =
+      '<div class="opt" onclick="pickDate(\'今天\')">今天'+(s.date==='今天'?'<span class="check">✓</span>':'')+'</div>'+
+      '<div class="opt" onclick="pickDate(\'昨天\')">昨天'+(s.date==='昨天'?'<span class="check">✓</span>':'')+'</div>'+
+      '<div class="opt" onclick="closeSheet();document.getElementById(\'dateNative\').showPicker?document.getElementById(\'dateNative\').showPicker():document.getElementById(\'dateNative\').click()">📅 选择其他日期 <span class="muted" style="margin-left:auto">›</span></div>';
+    openSheet('选择日期', html);
+  }
+  function pickDate(d){ s.date = d; closeSheet(); renderEntry(); }
+  function onDatePicked(v){ if(v){ s.date = v; renderEntry(); } }
 
   function renderEntry(){
     document.getElementById('curSym').textContent = SYM[s.cur];
@@ -242,6 +327,8 @@
     document.getElementById('convDisp').textContent =
       '≈ ¥' + cny.toFixed(2) + ' · 汇率 ' + RATE[s.cur];
     document.getElementById('payerDisp').textContent = MEM_EMOJI[s.payer] + ' ' + MEMBERS[s.payer];
+    document.getElementById('catDisp').textContent = CATS[s.cat].e + ' ' + CATS[s.cat].n;
+    document.getElementById('dateDisp').textContent = s.date;
     var n = s.join.filter(Boolean).length;
     document.getElementById('joinCount').textContent = n;
     var per = n > 0 ? cny / n : 0;
@@ -271,16 +358,18 @@
     renderEntry();
   });
 
-  // 切分摊方式
+  // 切分摊方式（档1：仅平均分可用，其余标 P1）
   document.getElementById('splitSeg').addEventListener('click', function(e){
     var seg = e.target.closest('.seg'); if(!seg) return;
-    s.split = seg.dataset.split;
+    var sp = seg.dataset.split;
+    if(sp !== '平均分'){
+      toast(sp + '为完整版功能，敬请期待');
+      return;                                  // 不切换、维持平均分高亮
+    }
+    s.split = sp;
     this.querySelectorAll('.seg').forEach(function(x){ x.classList.toggle('on', x===seg); });
     renderEntry();
   });
-
-  // 切付款人
-  function cyclePayer(){ s.payer = (s.payer + 1) % MEMBERS.length; renderEntry(); }
 
   // 点头像排除/加入
   document.getElementById('memRow').addEventListener('click', function(e){
@@ -294,18 +383,41 @@
     renderEntry();
   });
 
+  // 渲染概览的“按分类看支出”
+  function renderCatSummary(){
+    var box = document.getElementById('catSummary');
+    var entries = Object.keys(CAT_SUM).map(function(k){ return [k, CAT_SUM[k]]; })
+                        .filter(function(x){ return x[1] > 0; })
+                        .sort(function(a,b){ return b[1]-a[1]; });
+    var max = entries.length ? entries[0][1] : 1;
+    var eMap = {}; CATS.forEach(function(c){ eMap[c.n]=c.e; });
+    box.innerHTML = entries.map(function(x){
+      var pct = Math.round(x[1]/max*100);
+      return '<div style="margin:9px 0">'
+        + '<div class="row" style="font-size:13px;margin-bottom:4px"><span>'+ (eMap[x[0]]||'') +' '+x[0]+'</span>'
+        + '<b>¥'+x[1].toLocaleString()+'</b></div>'
+        + '<div style="height:7px;background:#eef1f5;border-radius:6px;overflow:hidden">'
+        + '<div style="height:100%;width:'+pct+'%;background:var(--brand);border-radius:6px"></div></div></div>';
+    }).join('');
+  }
+
   // 保存 → 更新概览
   function saveEntry(){
     var cny = cnyOf();
-    if(cny <= 0){ alert('请输入金额'); return; }
+    if(cny <= 0){ toast('请先输入金额'); return; }
     var n = s.join.filter(Boolean).length;
     var per = cny / n;
+    var cat = CATS[s.cat];
 
     // 概览总额 / 笔数
     BASE_TOTAL += cny; BASE_COUNT += 1;
     document.getElementById('ovTotal').textContent =
       BASE_TOTAL.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('ovCount').textContent = BASE_COUNT;
+
+    // 分类汇总累加
+    CAT_SUM[cat.n] = (CAT_SUM[cat.n] || 0) + Math.round(cny);
+    renderCatSummary();
 
     // “你”的净额：你付了就 +全额，你参与就 −每人份
     if(s.payer === ME_INDEX) BASE_NET += cny;
@@ -318,8 +430,8 @@
     var slot = document.getElementById('newEntrySlot');
     var row = document.createElement('div');
     row.className = 'listitem';
-    row.innerHTML = '<span class="ic">🍜</span><div style="flex:1"><b>餐饮 · 刚记的</b>'
-      + '<div class="muted">' + MEMBERS[s.payer] + ' 垫付 · ' + n + ' 人' + s.split + '</div></div>'
+    row.innerHTML = '<span class="ic">'+cat.e+'</span><div style="flex:1"><b>'+cat.n+' · 刚记的</b>'
+      + '<div class="muted">' + MEMBERS[s.payer] + ' 垫付 · ' + n + ' 人均摊 · ' + s.date + '</div></div>'
       + '<div style="text-align:right"><b>' + SYM[s.cur] + amtNum().toLocaleString() + '</b>'
       + '<div class="muted">≈¥' + cny.toFixed(0) + '</div></div>';
     slot.insertBefore(row, slot.firstChild);
@@ -334,7 +446,8 @@
     }, 700);
   }
 
-  renderEntry();  // 初始化
+  renderEntry();        // 初始化记账页
+  renderCatSummary();   // 初始化分类汇总
 </script>
 </body>
 </html>
